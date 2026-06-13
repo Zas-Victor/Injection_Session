@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     procps \
     netcat-openbsd \
     dnsutils \
+    util-linux \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
