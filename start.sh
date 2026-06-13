@@ -1,33 +1,28 @@
 #!/usr/bin/env bash
 set -e
 
-export TERM=xterm-256color
-export PORT="${PORT:-8080}"
+export PORT="${PORT:-10000}"
+export OLLAMA_HOST="0.0.0.0:${PORT}"
+export OLLAMA_ORIGINS="${OLLAMA_ORIGINS:-*}"
+export OLLAMA_MODELS="${OLLAMA_MODELS:-/var/data/ollama}"
+export OLLAMA_MODEL="${OLLAMA_MODEL:-qwen2.5-coder:3b}"
 
-echo "Iniciando servidor HTTP na porta $PORT..."
-python3 -m http.server "$PORT" --bind 0.0.0.0 > /tmp/http.log 2>&1 &
+mkdir -p "$OLLAMA_MODELS"
 
-echo "Configurando tmate na porta 443..."
-mkdir -p /root
+echo "Iniciando Ollama em $OLLAMA_HOST"
+echo "Modelo: $OLLAMA_MODEL"
 
-cat > /root/.tmate.conf <<'EOF'
-set -g tmate-server-host ssh.tmate.io
-set -g tmate-server-port 443
-EOF
+ollama serve &
+OLLAMA_PID=$!
 
-echo "Testando rede..."
-getent hosts ssh.tmate.io || true
-nc -vz ssh.tmate.io 443 || true
+echo "Aguardando Ollama iniciar..."
+sleep 8
 
-echo ""
-echo "===================================================="
-echo "INICIANDO TMATE"
-echo "O SSH VAI APARECER ABAIXO"
-echo "Use o link sem ro- para controle total"
-echo "===================================================="
-echo ""
+echo "Baixando modelo..."
+ollama pull "$OLLAMA_MODEL" || true
 
-script -q -c "tmate -F" /dev/null || true
+echo "Modelos instalados:"
+ollama list || true
 
-echo "tmate saiu. Mantendo container vivo..."
-tail -f /tmp/http.log
+echo "Ollama pronto na porta $PORT"
+wait "$OLLAMA_PID"
